@@ -223,12 +223,23 @@ void MSRReader::frameToTiff(int frameNumber) {
 	//get string for filename
 	QString extensionString = QString(tr(".tiff"));
 	QStringList location = file->fileName().split(".");
+	QString timestampString;
+	
+	//check for invalid timestamp
+	if(timestamp == 0xFFFFFFFFFFFFFFFF) {
+		timestampString = QString("na");
+	}
+	else
+		timestampString = QString::number(timestamp);
+
 	if(!QDir(location[0]).exists()) {
 		QDir().mkdir(location[0]);
 	}
 	//one of the timestamps doesn't get extracted in the right way, therefore no file is created
+	QString filenameTIFF = location[0] + QString("/") + QString::number(frameIndex) + "_" + timestampString + extensionString;
 	//QString filenameTIFF = location[0] + QString("/") + QString::number(timestamp) + extensionString;
-	QString filenameTIFF = location[0] + QString("/") + QString::number(frameIndex) + extensionString;
+	//QString filenameTIFF = location[0] + QString("/") + QString::number(frameIndex) + extensionString;
+	qDebug() << "MSRReader: frameIndex" << frameIndex << "timestamp" << QString::number(timestamp);
 	TIFF *out=TIFFOpen(filenameTIFF.toLatin1(),"w");
 
 	TIFFSetField(out, TIFFTAG_IMAGEWIDTH, width);
