@@ -46,6 +46,10 @@ void MSRReader::readFileInfo() {
 			bitsPerChannel = 10;
 			channels = 3;
 			break;
+		case 6:
+			bitsPerChannel = 8;
+			channels = 1;
+			break;
 		default:
 			bitsPerChannel = 0;
 			channels = 0;
@@ -83,16 +87,13 @@ int MSRReader::getColorMode() {
 	return colorMode;
 }
 
-//convert 10bit data to 8bit image for displaying
+//make preview qimage
 void MSRReader::makePreview(int frameNumber) {
 
-	//convert to unsigned char since only bitshift ops on _unsigned_ 
-	//values fill with zeros
-	//qDebug() << "MSRReader: open file for preview " << file->open(QIODevice::ReadOnly);
 	file->seek(headerSize+sizeof(unsigned long long)+frameNumber*(bytesPerFrame+sizeof(unsigned long long)));
 	QDataStream in(file);
 
-	//unsigned char *rawData = (unsigned char *) rawDat;
+	//convert to unsigned char since only bitshift ops on _unsigned_ 
 	unsigned char *rawData = new unsigned char[bytesPerFrame];
 	in.readRawData((char*) rawData, bytesPerFrame);
 
@@ -100,25 +101,33 @@ void MSRReader::makePreview(int frameNumber) {
 	image.fill(0);
 	
 	QVector<unsigned short> samples = readSamples(rawData);
-	//shift right by two to get 8 bit values
-	if(bitsPerChannel == 10 && channels == 3) {
-		for(int i=0; i<height; i++) {
-			for(int j=0; j<width; j++) {
-				image.setPixel(j,i,qRgb(samples[channels*(i*width+j)] >> 2,
-										samples[channels*(i*width+j)+1] >> 2,
-										samples[channels*(i*width+j)+2] >> 2));
+
+	//limit samples to 8 bit and write to qimage
+	switch(colorMode) {
+		case 25:
+			for(int i=0; i<height; i++) {
+				for(int j=0; j<width; j++) {
+					image.setPixel(j,i,qRgb(samples[channels*(i*width+j)] >> 2,
+											samples[channels*(i*width+j)+1] >> 2,
+											samples[channels*(i*width+j)+2] >> 2));
+				}
 			}
-		}
-	}
-	else if(bitsPerChannel == 8 && channels == 1) {
-		for(int i=0; i<height; i++) {
-			for(int j=0; j<width; j++) {
-				image.setPixel(j,i,qRgb(samples[channels*(i*width+j)],
-										samples[channels*(i*width+j)],
-										samples[channels*(i*width+j)]));
+			break;
+
+		case 6:
+			for(int i=0; i<height; i++) {
+				for(int j=0; j<width; j++) {
+					image.setPixel(j,i,qRgb(samples[channels*(i*width+j)],
+											samples[channels*(i*width+j)],
+											samples[channels*(i*width+j)]));
+				}
 			}
-		}
+			break;
+
+		default:
+			qDebug() << "MSRReader: color mode unknown";
 	}
+
 	emit newPreview(image);
 	delete rawData;
 }
@@ -131,7 +140,10 @@ QVector<unsigned short> MSRReader::readSamples(unsigned char *rawData) {
 
 	int offset = 0;
 
-	if(bitsPerChannel == 10 && channels == 3) {
+	switch(colorMode) {
+	
+	//10 bit rgb
+	case 25:
 		for(int i=0; i<height; i++) {
 			for(int j=0; j<width; j++) {
 				r = 0; g = 0; b = 0;
@@ -159,8 +171,9 @@ QVector<unsigned short> MSRReader::readSamples(unsigned char *rawData) {
 				offset += 4;
 			}
 		}
-	}
-	else if(bitsPerChannel == 8 && channels == 1) {
+		break;
+	//8bit grayvalue
+	case 6:
 		for(int i=0; i<height; i++) {
 			for(int j=0; j<width; j++) {
 				gy = 0;
@@ -168,7 +181,9 @@ QVector<unsigned short> MSRReader::readSamples(unsigned char *rawData) {
 				samples.replace(channels*(i*width+j), gy);
 			}
 		}
+		break;
 	}
+
 	return samples;
 }
 
@@ -187,7 +202,7 @@ void MSRReader::convertWholeFile() {
 }
 
 void MSRReader::onFrameConverted() {
-	qDebug() << frameIndex;
+	//qDebug() << frameIndex;
 	frameIndex++;
 	if(frameIndex < framesInFile)
 		//emit convertFrame(frameIndex);
@@ -216,13 +231,6 @@ void MSRReader::frameToTiff(int frameNumber) {
 	unsigned char *rawData = new unsigned char[bytesPerFrame];
 	in.readRawData((char*) rawData, bytesPerFrame);
 
-	QVector<unsigned short> samples = readSamples(rawData);
-
-	//start cleaning tis mess here!
-
-	//get string for filename
-	QString extensionString = QString(tr(".tiff"));
-	QStringList location = file->fileName().split(".");
 	QString timestampString;
 	
 	//check for invalid timestamp
@@ -232,14 +240,23 @@ void MSRReader::frameToTiff(int frameNumber) {
 	else
 		timestampString = QString::number(timestamp);
 
+	QVector<unsigned short> samples = readSamples(rawData);
+
+	//start cleaning tis mess here!
+
+	//get string for filename
+	QString extensionString = QString(tr(".tiff"));
+	QStringList location = file->fileName().split(".");
+
+	QString filenameTIFF = location[0] + QString("/") + QString::number(frameIndex) + "_" + timestampString + extensionString;
+	
+	//create target dir
 	if(!QDir(location[0]).exists()) {
 		QDir().mkdir(location[0]);
 	}
-	//one of the timestamps doesn't get extracted in the right way, therefore no file is created
-	QString filenameTIFF = location[0] + QString("/") + QString::number(frameIndex) + "_" + timestampString + extensionString;
-	//QString filenameTIFF = location[0] + QString("/") + QString::number(timestamp) + extensionString;
-	//QString filenameTIFF = location[0] + QString("/") + QString::number(frameIndex) + extensionString;
-	qDebug() << "MSRReader: frameIndex" << frameIndex << "timestamp" << QString::number(timestamp);
+
+	//qDebug() << "MSRReader: frameIndex" << frameIndex << "timestamp" << QString::number(timestamp);
+
 	TIFF *out=TIFFOpen(filenameTIFF.toLatin1(),"w");
 
 	TIFFSetField(out, TIFFTAG_IMAGEWIDTH, width);
@@ -256,59 +273,83 @@ void MSRReader::frameToTiff(int frameNumber) {
 	TIFFSetField(out, TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(out, width*channels));
 		
 	char *newLine = new char[linebytes+10];
-	for(int row=0; row<height; row++) {
 
-		uchar buf[5];
-		uchar sBuf[2];
-		unsigned short s;
-		int linePos = 0;
-		for(int i=0; i<channels*width; i+=4) {
-			//qDebug() << i;
-			memset(&buf, 0, 5);
-			for(int j=0; j<4; j++) {
-				s = samples[row*width*channels+i+j];
-				switch(j) {
-					case 0:
-						s = s << 6;
-						sBuf[0] = (char) (s >> 8);
-						sBuf[1] = (char) s;
-						buf[0] = buf[0] | sBuf[0];
-						buf[1] = buf[1] | sBuf[1];
-						break;
-					case 1:
-						s = s << 4;
-						sBuf[0] = (char) (s >> 8);
-						sBuf[1] = (char) s;
-						buf[1] = buf[1] | sBuf[0];
-						buf[2] = buf[2] | sBuf[1];
-						break;
-					case 2:
-						s = s << 2;
-						sBuf[0] = (char) (s >> 8);
-						sBuf[1] = (char) s;
-						buf[2] = buf[2] | sBuf[0];
-						buf[3] = buf[3] | sBuf[1];
-						break;
-					case 3:
-						sBuf[0] = (char) (s >> 8);
-						sBuf[1] = (char) s;
-						buf[3] = buf[3] | sBuf[0];
-						buf[4] = buf[4] | sBuf[1];
-						break;
+	switch(colorMode) {
+		case 25:
+			for(int row=0; row<height; row++) {
+
+				uchar buf[5];
+				uchar sBuf[2];
+				unsigned short s;
+				int linePos = 0;
+				for(int i=0; i<channels*width; i+=4) {
+					//qDebug() << i;
+					memset(&buf, 0, 5);
+					for(int j=0; j<4; j++) {
+						s = samples[row*width*channels+i+j];
+						switch(j) {
+							case 0:
+								s = s << 6;
+								sBuf[0] = (char) (s >> 8);
+								sBuf[1] = (char) s;
+								buf[0] = buf[0] | sBuf[0];
+								buf[1] = buf[1] | sBuf[1];
+								break;
+							case 1:
+								s = s << 4;
+								sBuf[0] = (char) (s >> 8);
+								sBuf[1] = (char) s;
+								buf[1] = buf[1] | sBuf[0];
+								buf[2] = buf[2] | sBuf[1];
+								break;
+							case 2:
+								s = s << 2;
+								sBuf[0] = (char) (s >> 8);
+								sBuf[1] = (char) s;
+								buf[2] = buf[2] | sBuf[0];
+								buf[3] = buf[3] | sBuf[1];
+								break;
+							case 3:
+								sBuf[0] = (char) (s >> 8);
+								sBuf[1] = (char) s;
+								buf[3] = buf[3] | sBuf[0];
+								buf[4] = buf[4] | sBuf[1];
+								break;
+						}
+					}
+					for(int k=0; k<5; k++) {
+						newLine[linePos+k] = buf[k];
+					}
+					linePos += 5;
 				}
+				//memcpy(buf, newLine, linebytes);
+				//qDebug() << "writing row" << row;
+				//if(TIFFWriteScanline(out, buf, row, 0)<0) {
+				if(TIFFWriteScanline(out, newLine, row, 0)<0) {
+					qDebug() << "something went wrong during writing the tiff";
+				return;
+				}
+
 			}
-			for(int k=0; k<5; k++) {
-				newLine[linePos+k] = buf[k];
+			break;
+
+		case 6:
+			for(int row=0; row<height; row++) {
+				//qDebug() << "row";
+				int linePos = 0;
+				for(int i=0; i<channels*width; i++) {
+					newLine[i] = samples[row*width+i];
+				}
+				if(TIFFWriteScanline(out, newLine, row, 0)<0) {
+					qDebug() << "something went wrong during writing the tiff";
+				return;
+				}
+
 			}
-			linePos += 5;
-		}
-		//memcpy(buf, newLine, linebytes);
-		//qDebug() << "writing row" << row;
-		//if(TIFFWriteScanline(out, buf, row, 0)<0) {
-		if(TIFFWriteScanline(out, newLine, row, 0)<0) {
-			qDebug() << "something went wrong during writing the tiff";
-		return;
-		}
+			break;
+
+		default:
+			qDebug() << "MSRReader: wrong colormode cannot write tiff";
 
 	}
 	TIFFClose(out);
