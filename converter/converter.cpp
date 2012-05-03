@@ -34,12 +34,27 @@ converter::converter(QWidget *parent, Qt::WFlags flags)
 	connect(ui.slider, SIGNAL(valueChanged(int)), this, SLOT(onSlider(int)));
 	connect(ui.pushButtonConvert, SIGNAL(clicked()), reader, SLOT(convertWholeFile()));
 	connect(reader, SIGNAL(frameConverted(int)), this, SLOT(onFrameConverted(int)));
+	connect(reader, SIGNAL(conversionStatus(int)), this, SLOT(onConversionStatus(int)));
 }
 
-converter::~converter()
-{
+converter::~converter() {
 
 }
+
+void converter::onConversionStatus(int status) {
+	switch(status) {
+		case 1:
+			ui.labelConversionStatus->setText("busy");
+			break;
+		case 3:
+			ui.labelConversionStatus->setText("done");
+			break;
+		default:
+			ui.labelConversionStatus->setText("narf");
+	}
+}
+
+
 
 void converter::onNewDirSelected(QModelIndex i) {
 	QString sPath = dirModel->fileInfo(i).absoluteFilePath();
@@ -57,18 +72,20 @@ void converter::onNewFileSelected(QModelIndex i) {
 	}
 }
 
-void converter::onConvertButton() {
-	qDebug() << "convert button clicked";
-	QItemSelectionModel *selectionModel= ui.list->selectionModel();
-	QModelIndexList indices = selectionModel->selectedIndexes();
-	if(!indices.isEmpty()) {
-		QString path = fileModel->fileInfo(indices[0]).absoluteFilePath();
-		qDebug() << "converting" << path;
-	}
-	else {
-		qDebug() << "nothing selected";
-	}
-}
+
+//void converter::onConvertButton() {
+//	qDebug() << "convert button clicked";
+//	//ui.labelConvertingStatus->setText("bla");
+//	QItemSelectionModel *selectionModel= ui.list->selectionModel();
+//	QModelIndexList indices = selectionModel->selectedIndexes();
+//	if(!indices.isEmpty()) {
+//		QString path = fileModel->fileInfo(indices[0]).absoluteFilePath();
+//		qDebug() << "converting" << path;
+//	}
+//	else {
+//		qDebug() << "nothing selected";
+//	}
+//}
 
 void converter::onFileInfo() {
 	ui.labelHeight->setText(QString::number(reader->getHeight()));
@@ -78,6 +95,9 @@ void converter::onFileInfo() {
 	switch(reader->getColorMode()) {
 		case 25:
 			ui.labelColorMode->setText("10 Bit RGB");
+			break;
+		case 6:
+			ui.labelColorMode->setText("8 Bit Grayvalue");
 			break;
 		default :
 			ui.labelColorMode->setText("n/A");

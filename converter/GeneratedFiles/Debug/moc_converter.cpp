@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'converter.h'
 **
-** Created: Fri 27. Apr 15:30:02 2012
+** Created: Thu 3. May 13:53:03 2012
 **      by: The Qt Meta Object Compiler version 63 (Qt 4.8.0)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -34,10 +34,10 @@ static const uint qt_meta_data_converter[] = {
       11,   10,   10,   10, 0x08,
       41,   10,   10,   10, 0x08,
       72,   10,   10,   10, 0x08,
-      90,   10,   10,   10, 0x08,
+      85,   10,   10,   10, 0x08,
      103,   10,   10,   10, 0x08,
-     121,   10,   10,   10, 0x08,
-     135,   10,   10,   10, 0x08,
+     117,   10,   10,   10, 0x08,
+     139,   10,   10,   10, 0x08,
 
        0        // eod
 };
@@ -45,9 +45,9 @@ static const uint qt_meta_data_converter[] = {
 static const char qt_meta_stringdata_converter[] = {
     "converter\0\0onNewDirSelected(QModelIndex)\0"
     "onNewFileSelected(QModelIndex)\0"
-    "onConvertButton()\0onFileInfo()\0"
-    "onPreview(QImage)\0onSlider(int)\0"
-    "onFrameConverted(int)\0"
+    "onFileInfo()\0onPreview(QImage)\0"
+    "onSlider(int)\0onFrameConverted(int)\0"
+    "onConversionStatus(int)\0"
 };
 
 void converter::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
@@ -58,11 +58,11 @@ void converter::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, v
         switch (_id) {
         case 0: _t->onNewDirSelected((*reinterpret_cast< QModelIndex(*)>(_a[1]))); break;
         case 1: _t->onNewFileSelected((*reinterpret_cast< QModelIndex(*)>(_a[1]))); break;
-        case 2: _t->onConvertButton(); break;
-        case 3: _t->onFileInfo(); break;
-        case 4: _t->onPreview((*reinterpret_cast< QImage(*)>(_a[1]))); break;
-        case 5: _t->onSlider((*reinterpret_cast< int(*)>(_a[1]))); break;
-        case 6: _t->onFrameConverted((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 2: _t->onFileInfo(); break;
+        case 3: _t->onPreview((*reinterpret_cast< QImage(*)>(_a[1]))); break;
+        case 4: _t->onSlider((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 5: _t->onFrameConverted((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 6: _t->onConversionStatus((*reinterpret_cast< int(*)>(_a[1]))); break;
         default: ;
         }
     }

@@ -1,7 +1,7 @@
 /********************************************************************************
 ** Form generated from reading UI file 'converter.ui'
 **
-** Created: Fri 27. Apr 14:54:54 2012
+** Created: Thu 3. May 13:45:10 2012
 **      by: Qt User Interface Compiler version 4.8.0
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
@@ -52,6 +52,7 @@ public:
     QLabel *labelFrames;
     QLabel *labelPreview;
     QSlider *slider;
+    QLabel *labelConversionStatus;
     QMenuBar *menuBar;
     QToolBar *mainToolBar;
     QStatusBar *statusBar;
@@ -161,6 +162,11 @@ public:
 
         gridLayout->addWidget(frame, 0, 2, 1, 1);
 
+        labelConversionStatus = new QLabel(centralWidget);
+        labelConversionStatus->setObjectName(QString::fromUtf8("labelConversionStatus"));
+
+        gridLayout->addWidget(labelConversionStatus, 2, 0, 1, 2);
+
         converterClass->setCentralWidget(centralWidget);
         menuBar = new QMenuBar(converterClass);
         menuBar->setObjectName(QString::fromUtf8("menuBar"));
@@ -191,6 +197,7 @@ public:
         label_4->setText(QApplication::translate("converterClass", "Frames:", 0, QApplication::UnicodeUTF8));
         labelFrames->setText(QApplication::translate("converterClass", "n/A", 0, QApplication::UnicodeUTF8));
         labelPreview->setText(QString());
+        labelConversionStatus->setText(QApplication::translate("converterClass", "idle", 0, QApplication::UnicodeUTF8));
     } // retranslateUi
 
 };

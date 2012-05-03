@@ -1,23 +1,3 @@
-//#ifndef CONVERTER_H
-//#define CONVERTER_H
-//
-//#include <QtGui/QMainWindow>
-//#include "ui_converter.h"
-//
-//class converter : public QMainWindow
-//{
-//	Q_OBJECT
-//
-//public:
-//	converter(QWidget *parent = 0, Qt::WFlags flags = 0);
-//	~converter();
-//
-//private:
-//	Ui::converterClass ui;
-//};
-//
-//#endif // CONVERTER_H
-
 #ifndef CONVERTER_H
 #define CONVERTER_H
 
@@ -35,7 +15,6 @@
 #include <QHeaderView>
 #include "ui_converter.h"
 #include <qthread.h>
-//#include <QSelectionModel>
 
 class converter : public QMainWindow
 {
@@ -53,15 +32,17 @@ private:
 	MSRReader *reader;
 	QTableWidget *table;
 	Ui::converterClass ui;
+	QLabel *labelConverting;
 
 private slots:
 	void onNewDirSelected(QModelIndex);
 	void onNewFileSelected(QModelIndex);
-	void onConvertButton();
+	//void onConvertButton();
 	void onFileInfo();
 	void onPreview(QImage);
 	void onSlider(int);
 	void onFrameConverted(int);
+	void onConversionStatus(int);
 };
 
 #endif // CONVERTER_H

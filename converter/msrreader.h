@@ -46,6 +46,8 @@ signals:
 	void newPreview(QImage);
 	void convertFrame(int);
 	void frameConverted(int);
+	void doneConvertingFile();
+	void conversionStatus(int);
 
 private slots:
 	void convertWholeFile();

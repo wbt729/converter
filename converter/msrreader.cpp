@@ -204,11 +204,16 @@ void MSRReader::convertWholeFile() {
 void MSRReader::onFrameConverted() {
 	//qDebug() << frameIndex;
 	frameIndex++;
-	if(frameIndex < framesInFile)
+	if(frameIndex < framesInFile) {
+		emit conversionStatus(1);
 		//emit convertFrame(frameIndex);
 		frameToTiff(frameIndex);
-	else
+	}
+	else {
+		emit doneConvertingFile();
+		emit conversionStatus(0);
 		return;
+	}
 }
 
 
